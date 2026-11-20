@@ -3,7 +3,7 @@
   "nodes": [
     {
       "parameters": {
-        "formId": "X5o7xV"
+        "formId": "YOUR_TALLY_FORM_ID"
       },
       "type": "n8n-nodes-tallyforms.tallyTrigger",
       "typeVersion": 2,
@@ -419,7 +419,7 @@
     },
     {
       "parameters": {
-        "sendTo": "primahonestrealty@gmail.com",
+        "sendTo": "support@example.com",
         "subject": "={{ $('Triage & Urgency Classifier').item.json.output.urgency }} {{ $('Triage & Urgency Classifier').item.json.output.category }}",
         "message": "=<p><strong>HUMAN HANDOVER REQUIRED</strong></p>  <ul>   <li><strong>Ticket ID:</strong> {{ $('Normalize Ticket Fields').item.json.ticket_id }}</li>   <li><strong>Category:</strong> {{ $('Triage & Urgency Classifier').item.json.output.category }}</li>   <li><strong>Urgency:</strong> {{ $('Triage & Urgency Classifier').item.json.output.urgency }}</li>   <li><strong>Customer:</strong> {{ $('Normalize Ticket Fields').item.json.customer_name }} ({{ $('Normalize Ticket Fields').item.json.customer_email }})</li>   <li><strong>Order ID:</strong> {{ $('Normalize Ticket Fields').item.json.order_id }}</li> </ul>  <p><strong>AI Triage Summary:</strong><br> {{ $('Triage & Urgency Classifier').item.json.output.summary }}</p>  <p><strong>Original Customer Message:</strong><br> \"{{ $('Normalize Ticket Fields').item.json.enquiry_message }}\"</p>  <p><strong>Action Needed:</strong> Review in <strong>Customer_Support_System</strong> Google Sheet and reply directly to {{ $('Normalize Ticket Fields').item.json.customer_email }}.</p>",
         "options": {}
@@ -445,17 +445,17 @@
         "operation": "update",
         "documentId": {
           "__rl": true,
-          "value": "1DEg6glnrKgFkdAn6wr_y8g4YjLBrYg5OC-i2oEnj35U",
+          "value": "YOUR_GOOGLE_SHEET_ID",
           "mode": "list",
           "cachedResultName": "Customer_Support_System",
-          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1DEg6glnrKgFkdAn6wr_y8g4YjLBrYg5OC-i2oEnj35U/edit?usp=drivesdk"
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1DYOUR_GOOGLE_SHEET_ID"
         },
         "sheetName": {
           "__rl": true,
           "value": "gid=0",
           "mode": "list",
           "cachedResultName": "Enquiries_Log",
-          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1DEg6glnrKgFkdAn6wr_y8g4YjLBrYg5OC-i2oEnj35U/edit#gid=0"
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1DYOUR_GOOGLE_SHEET_ID"
         },
         "columns": {
           "mappingMode": "defineBelow",
