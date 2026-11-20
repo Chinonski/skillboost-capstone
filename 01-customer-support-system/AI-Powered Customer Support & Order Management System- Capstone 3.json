@@ -1,0 +1,1559 @@
+{
+  "name": "AI-Powered Customer Support & Order Management System- Capstone 3",
+  "nodes": [
+    {
+      "parameters": {
+        "formId": "X5o7xV"
+      },
+      "type": "n8n-nodes-tallyforms.tallyTrigger",
+      "typeVersion": 2,
+      "position": [
+        0,
+        0
+      ],
+      "id": "d74340c3-8f02-4402-b096-d1cbb565bcc7",
+      "name": "Tally Support Form Trigger",
+      "webhookId": "f9afac8c-0501-4b03-a03e-f944aac28cfd",
+      "credentials": {
+        "tallyApi": {
+          "id": "JB2TyyMxZN86z7QW",
+          "name": "Tally account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "9415813e-b936-486e-8315-e48a88bb000e",
+              "name": "ticket_id",
+              "value": "={{ 'TKT-' + $now.toFormat('yyyyLLdd-HHmmss') }}",
+              "type": "string"
+            },
+            {
+              "id": "3f029dd7-086e-42be-8ef0-aaaf3240be2f",
+              "name": "timestamp",
+              "value": "={{ $now.toISO() }}",
+              "type": "string"
+            },
+            {
+              "id": "8799dcfb-ae20-40e8-8bc3-67c0061ca714",
+              "name": "customer_name",
+              "value": "={{ $json.question_0o9kd6.value }}",
+              "type": "string"
+            },
+            {
+              "id": "f61981e5-1903-4700-ba55-2d50909f5bc3",
+              "name": "customer_email",
+              "value": "={{ $json.question_zW9djq.value }}",
+              "type": "string"
+            },
+            {
+              "id": "565e1c35-0f0e-4c0f-a6f4-e6aabedd7a0d",
+              "name": "order_id",
+              "value": "={{ $json.question_5E7Vbd.value ? $json.question_5E7Vbd.value.trim().toUpperCase() : 'NONE' }}",
+              "type": "string"
+            },
+            {
+              "id": "8f5c21e3-dbe8-4e94-aff0-6639afe71388",
+              "name": "enquiry_message",
+              "value": "={{ $json.question_dQMzEA.value }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.5,
+      "position": [
+        224,
+        0
+      ],
+      "id": "8390cb94-3a6d-436e-8cfa-050741fef082",
+      "name": "Normalize Ticket Fields"
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=Customer Name: {{ $json.customer_name }}\nOrder ID Provided: {{ $json.order_id || \"NONE\" }}\nEnquiry Message: {{ $json.enquiry_message }}",
+        "hasOutputParser": true,
+        "options": {
+          "systemMessage": "You are an expert e-commerce customer support triage classifier. Analyze the incoming customer enquiry and classify it accurately.\n\nRules:\n1. Classify \"category\" into strictly ONE of:\n   - \"Order Tracking\" (asking about delivery status, shipping, tracking number, or late package)\n   - \"Product Enquiry\" (questions about product specs, availability, compatibility, or sizing)\n   - \"Refund Request\" (asking for money back, returns, cancellations, or exchanges)\n   - \"Complaint\" (expressing anger, dissatisfaction, defective item, wrong item received, or poor service)\n   - \"General Enquiry\" (store hours, policies, partnerships, or anything else)\n\n2. Determine \"urgency\" as strictly ONE of:\n   - \"High\" (angry tone, threatening chargeback/legal action, urgent deadline, damaged/missing high-value order, or explicit refund demand)\n   - \"Medium\" (delayed order past estimate, refund request, or product issue needing timely follow-up)\n   - \"Low\" (standard order tracking check, general product question, or routine feedback)\n\n3. Set \"requires_human\" to true if category is \"Complaint\" or \"Refund Request\", OR if urgency is \"High\". Otherwise false."
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 3.1,
+      "position": [
+        448,
+        0
+      ],
+      "id": "5614979d-5184-4720-be93-d75a4c215de0",
+      "name": "Triage & Urgency Classifier"
+    },
+    {
+      "parameters": {
+        "model": {
+          "__rl": true,
+          "value": "gpt-4o-mini",
+          "mode": "list",
+          "cachedResultName": "gpt-4o-mini"
+        },
+        "builtInTools": {},
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
+      "typeVersion": 1.3,
+      "position": [
+        304,
+        208
+      ],
+      "id": "5d494320-08fb-405c-a26a-464f2c7c8670",
+      "name": "Classifier LLM (OpenAI)",
+      "credentials": {
+        "openAiApi": {
+          "id": null,
+          "name": "",
+          "__aiGatewayManaged": true
+        }
+      }
+    },
+    {
+      "parameters": {
+        "schemaType": "manual",
+        "inputSchema": "{\n  \"type\": \"object\",\n  \"properties\": {\n    \"category\": {\n      \"type\": \"string\",\n      \"enum\": [\n        \"Order Tracking\",\n        \"Product Enquiry\",\n        \"Refund Request\",\n        \"Complaint\",\n        \"General Enquiry\"\n      ]\n    },\n    \"urgency\": {\n      \"type\": \"string\",\n      \"enum\": [\n        \"Low\",\n        \"Medium\",\n        \"High\"\n      ]\n    },\n    \"requires_human\": {\n      \"type\": \"boolean\"\n    }\n  },\n  \"required\": [\n    \"category\",\n    \"urgency\",\n    \"requires_human\"\n  ],\n  \"additionalProperties\": false\n}"
+      },
+      "type": "@n8n/n8n-nodes-langchain.outputParserStructured",
+      "typeVersion": 1.3,
+      "position": [
+        608,
+        208
+      ],
+      "id": "dc7e61da-c040-4db9-bef4-bc831d90a9dd",
+      "name": "Triage JSON Schema Parser"
+    },
+    {
+      "parameters": {
+        "operation": "append",
+        "documentId": {
+          "__rl": true,
+          "value": "1DEg6glnrKgFkdAn6wr_y8g4YjLBrYg5OC-i2oEnj35U",
+          "mode": "list",
+          "cachedResultName": "Customer_Support_System",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1DEg6glnrKgFkdAn6wr_y8g4YjLBrYg5OC-i2oEnj35U/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "gid=0",
+          "mode": "list",
+          "cachedResultName": "Enquiries_Log",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1DEg6glnrKgFkdAn6wr_y8g4YjLBrYg5OC-i2oEnj35U/edit#gid=0"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "Timestamp": "={{ $('Normalize Ticket Fields').item.json.timestamp }}",
+            "Ticket_ID": "={{ $('Normalize Ticket Fields').item.json.ticket_id }}",
+            "Customer_Name": "={{ $('Normalize Ticket Fields').item.json.customer_name }}",
+            "Order_ID": "={{ $('Normalize Ticket Fields').item.json.order_id }}",
+            "Customer_Email": "={{ $('Normalize Ticket Fields').item.json.customer_email }}",
+            "Enquiry_Message": "={{ $('Normalize Ticket Fields').item.json.enquiry_message }}",
+            "AI_Category": "={{ $json.output.category }}",
+            "Status": "={{ $json.output.requires_human }}",
+            "AI_Urgency": "={{ $json.output.urgency }}",
+            "AI_Response_Sent": "="
+          },
+          "matchingColumns": [],
+          "schema": [
+            {
+              "id": "Timestamp",
+              "displayName": "Timestamp",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Ticket_ID",
+              "displayName": "Ticket_ID",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Customer_Name",
+              "displayName": "Customer_Name",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Customer_Email",
+              "displayName": "Customer_Email",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Order_ID",
+              "displayName": "Order_ID",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Enquiry_Message",
+              "displayName": "Enquiry_Message",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "AI_Category",
+              "displayName": "AI_Category",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "AI_Urgency",
+              "displayName": "AI_Urgency",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Status",
+              "displayName": "Status",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "AI_Response_Sent",
+              "displayName": "AI_Response_Sent",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        960,
+        0
+      ],
+      "id": "152b5ec8-36e9-491f-8603-30ec115e9874",
+      "name": "Log Ticket to Enquiries_Log",
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "6Cz7SR0KyGnm8bkw",
+          "name": "Google Sheets account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "rules": {
+          "values": [
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "loose",
+                  "version": 4
+                },
+                "conditions": [
+                  {
+                    "leftValue": "={{ $('Triage & Urgency Classifier').item.json.output.requires_human }}",
+                    "rightValue": "={{ true }}",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    },
+                    "id": "7a83b85a-f0b8-4b5b-978a-1ba07e2fa606"
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "Human Escalation"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "loose",
+                  "version": 4
+                },
+                "conditions": [
+                  {
+                    "id": "fafdcea3-16d0-4680-a49d-3f937e49853d",
+                    "leftValue": "={{ $('Triage & Urgency Classifier').item.json.output.category }}",
+                    "rightValue": "Order Tracking",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "Order Tracking"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "loose",
+                  "version": 4
+                },
+                "conditions": [
+                  {
+                    "id": "c8ea82f7-2fa9-4017-a456-70c71ada2c69",
+                    "leftValue": "={{ $('Triage & Urgency Classifier').item.json.output.category }}",
+                    "rightValue": "Product Enquiry",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "Product Enquiry"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "loose",
+                  "version": 4
+                },
+                "conditions": [
+                  {
+                    "id": "68e15c7e-66b5-4eb8-8921-3e8746d76c70",
+                    "leftValue": "=({{ $('Triage & Urgency Classifier').item.json.output.category }} is equal to General Enquiry)",
+                    "rightValue": "=({{ $('Triage & Urgency Classifier').item.json.output.category }} is equal to General Enquiry)",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals",
+                      "name": "filter.operator.equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "General Enquiry"
+            }
+          ]
+        },
+        "looseTypeValidation": true,
+        "options": {
+          "fallbackOutput": "extra"
+        }
+      },
+      "type": "n8n-nodes-base.switch",
+      "typeVersion": 3.5,
+      "position": [
+        1296,
+        -16
+      ],
+      "id": "acf14b42-5d3b-4585-a6d1-1f67d36aded1",
+      "name": "Route by Urgency & Category"
+    },
+    {
+      "parameters": {
+        "sendTo": "={{ $('Normalize Ticket Fields').item.json.customer_email }}",
+        "subject": "=We've Received Your Request [Ticket #{{ $('Normalize Ticket Fields').item.json.ticket_id }}]",
+        "message": "=<p>Hi {{ $('Normalize Ticket Fields').item.json.customer_name }},</p>  <p>Thank you for reaching out to us. We have logged your message under <strong>Ticket #{{ $('Normalize Ticket Fields').item.json.ticket_id }}</strong> and prioritized it for review by a senior support specialist.</p>  <p>Because your request involves <strong>{{ $('Triage & Urgency Classifier').item.json.output.category.toLowerCase() }}</strong>, a member of our team is reviewing the details personally and will follow up with you shortly.</p>  <p>Thank you for your patience,<br> <strong>Customer Support Team</strong></p>",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.2,
+      "position": [
+        1520,
+        -240
+      ],
+      "id": "b01a71c3-d525-49c5-9583-5da146aff27f",
+      "name": "Send Customer Holding Email",
+      "webhookId": "acdc1cb7-02b3-4624-87d8-c9d946925ad4",
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "K1WwSTBobtHShplW",
+          "name": "Gmail account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "sendTo": "primahonestrealty@gmail.com",
+        "subject": "={{ $('Triage & Urgency Classifier').item.json.output.urgency }} {{ $('Triage & Urgency Classifier').item.json.output.category }}",
+        "message": "=<p><strong>HUMAN HANDOVER REQUIRED</strong></p>  <ul>   <li><strong>Ticket ID:</strong> {{ $('Normalize Ticket Fields').item.json.ticket_id }}</li>   <li><strong>Category:</strong> {{ $('Triage & Urgency Classifier').item.json.output.category }}</li>   <li><strong>Urgency:</strong> {{ $('Triage & Urgency Classifier').item.json.output.urgency }}</li>   <li><strong>Customer:</strong> {{ $('Normalize Ticket Fields').item.json.customer_name }} ({{ $('Normalize Ticket Fields').item.json.customer_email }})</li>   <li><strong>Order ID:</strong> {{ $('Normalize Ticket Fields').item.json.order_id }}</li> </ul>  <p><strong>AI Triage Summary:</strong><br> {{ $('Triage & Urgency Classifier').item.json.output.summary }}</p>  <p><strong>Original Customer Message:</strong><br> \"{{ $('Normalize Ticket Fields').item.json.enquiry_message }}\"</p>  <p><strong>Action Needed:</strong> Review in <strong>Customer_Support_System</strong> Google Sheet and reply directly to {{ $('Normalize Ticket Fields').item.json.customer_email }}.</p>",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.2,
+      "position": [
+        1744,
+        -240
+      ],
+      "id": "0a3c15f4-6b1e-4662-b886-ed7c047596f5",
+      "name": "Alert Human Support Queue",
+      "webhookId": "75847303-4d27-4fc2-b188-cccf64c858ef",
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "K1WwSTBobtHShplW",
+          "name": "Gmail account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "update",
+        "documentId": {
+          "__rl": true,
+          "value": "1DEg6glnrKgFkdAn6wr_y8g4YjLBrYg5OC-i2oEnj35U",
+          "mode": "list",
+          "cachedResultName": "Customer_Support_System",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1DEg6glnrKgFkdAn6wr_y8g4YjLBrYg5OC-i2oEnj35U/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "gid=0",
+          "mode": "list",
+          "cachedResultName": "Enquiries_Log",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1DEg6glnrKgFkdAn6wr_y8g4YjLBrYg5OC-i2oEnj35U/edit#gid=0"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "Ticket_ID": "={{ $('Normalize Ticket Fields').item.json.ticket_id }}",
+            "Status": "=Escalated - Awaiting Human ({{ $('Triage & Urgency Classifier').item.json.output.urgency }})",
+            "AI_Response_Sent": "Acknowledgment sent + Escalated to Human Queue"
+          },
+          "matchingColumns": [
+            "Ticket_ID"
+          ],
+          "schema": [
+            {
+              "id": "Timestamp",
+              "displayName": "Timestamp",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Ticket_ID",
+              "displayName": "Ticket_ID",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Customer_Name",
+              "displayName": "Customer_Name",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Customer_Email",
+              "displayName": "Customer_Email",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Order_ID",
+              "displayName": "Order_ID",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Enquiry_Message",
+              "displayName": "Enquiry_Message",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "AI_Category",
+              "displayName": "AI_Category",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "AI_Urgency",
+              "displayName": "AI_Urgency",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Status",
+              "displayName": "Status",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "AI_Response_Sent",
+              "displayName": "AI_Response_Sent",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "row_number",
+              "displayName": "row_number",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "number",
+              "canBeUsedToMatch": true,
+              "readOnly": true,
+              "removed": true
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        1968,
+        -240
+      ],
+      "id": "5b0f44b5-eb71-4359-8293-e3966990671c",
+      "name": "Mark Ticket Escalated in Log",
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "6Cz7SR0KyGnm8bkw",
+          "name": "Google Sheets account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "documentId": {
+          "__rl": true,
+          "value": "1DEg6glnrKgFkdAn6wr_y8g4YjLBrYg5OC-i2oEnj35U",
+          "mode": "list",
+          "cachedResultName": "Customer_Support_System",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1DEg6glnrKgFkdAn6wr_y8g4YjLBrYg5OC-i2oEnj35U/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": 101,
+          "mode": "list",
+          "cachedResultName": "Orders_DB",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1DEg6glnrKgFkdAn6wr_y8g4YjLBrYg5OC-i2oEnj35U/edit#gid=101"
+        },
+        "filtersUI": {
+          "values": [
+            {
+              "lookupColumn": "Order_ID",
+              "lookupValue": "={{ $('Normalize Ticket Fields').item.json.order_id }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        1536,
+        16
+      ],
+      "id": "5a5eaf76-035e-44fe-9f61-21f5fc2811c5",
+      "name": "Lookup Order in Orders_DB",
+      "alwaysOutputData": true,
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "6Cz7SR0KyGnm8bkw",
+          "name": "Google Sheets account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=Customer Name: {{ $('Normalize Ticket Fields').item.json.customer_name }}\nTicket ID: {{ $('Normalize Ticket Fields').item.json.ticket_id }}\nOrder ID Submitted: {{ $('Normalize Ticket Fields').item.json.order_id }}\nCustomer Message: {{ $('Normalize Ticket Fields').item.json.enquiry_message }}\n\nDatabase Lookup Result:\n{{ JSON.stringify($json) }}\n",
+        "messages": {
+          "messageValues": [
+            {
+              "message": "You are a helpful, polite customer support representative for our online store. Write a clear, concise, personalized email body in raw HTML answering the customer's order tracking enquiry.  FORMATTING RULES: - Return ONLY raw HTML (no markdown code fences like ```html or ```, no subject line, no extra commentary outside the HTML). - Use clean, simple HTML tags appropriate for an email body such as <p>, <br>, <strong>, <ul>, and <li>.  CRITICAL GROUNDING RULES: 1. Rely STRICTLY on the \"Database Lookup Result\" provided below. NEVER invent, guess, or estimate tracking numbers, carriers, or delivery dates. 2. If the Database Lookup Result is empty or shows no matching Order_ID, politely inform the customer that we could not locate an order matching the ID provided (or that no Order ID was included) and ask them to reply with their correct Order ID (format: ORD-XXXX) so we can check right away. 3. Keep the tone warm, natural, and reassuring. Sign off as \"Customer Support Team\"."
+            }
+          ]
+        },
+        "batching": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.chainLlm",
+      "typeVersion": 1.9,
+      "position": [
+        1744,
+        -32
+      ],
+      "id": "ad4a1d4a-e1e6-4b66-9b70-871274875c49",
+      "name": "Draft Grounded Tracking Reply"
+    },
+    {
+      "parameters": {
+        "model": {
+          "__rl": true,
+          "value": "gpt-4o-mini",
+          "mode": "list",
+          "cachedResultName": "gpt-4o-mini"
+        },
+        "builtInTools": {},
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
+      "typeVersion": 1.3,
+      "position": [
+        1680,
+        176
+      ],
+      "id": "d48911c1-feb8-4fc3-9752-cf6dc718eb83",
+      "name": "Tracking Writer LLM",
+      "credentials": {
+        "openAiApi": {
+          "id": null,
+          "name": "",
+          "__aiGatewayManaged": true
+        }
+      }
+    },
+    {
+      "parameters": {
+        "sendTo": "={{ $('Normalize Ticket Fields').item.json.customer_email }}",
+        "subject": "=Update on Your Order ({{ $('Normalize Ticket Fields').item.json.order_id || 'Ticket ' + $('Normalize Ticket Fields').item.json.ticket_id }})",
+        "message": "={{ $json.text }}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.2,
+      "position": [
+        2112,
+        -32
+      ],
+      "id": "d9931342-5db5-4c20-9fe2-a00a391afb4b",
+      "name": "Send Order Tracking Email",
+      "webhookId": "33fcf391-bc66-4651-afb3-be03b543ac37",
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "K1WwSTBobtHShplW",
+          "name": "Gmail account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "update",
+        "documentId": {
+          "__rl": true,
+          "value": "1DEg6glnrKgFkdAn6wr_y8g4YjLBrYg5OC-i2oEnj35U",
+          "mode": "list",
+          "cachedResultName": "Customer_Support_System",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1DEg6glnrKgFkdAn6wr_y8g4YjLBrYg5OC-i2oEnj35U/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "gid=0",
+          "mode": "list",
+          "cachedResultName": "Enquiries_Log",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1DEg6glnrKgFkdAn6wr_y8g4YjLBrYg5OC-i2oEnj35U/edit#gid=0"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "Ticket_ID": "={{ $('Normalize Ticket Fields').item.json.ticket_id }}",
+            "Status": "Auto-Replied (Order Tracking)",
+            "AI_Response_Sent": "={{ $('Draft Grounded Tracking Reply').item.json.text }}"
+          },
+          "matchingColumns": [
+            "Ticket_ID"
+          ],
+          "schema": [
+            {
+              "id": "Timestamp",
+              "displayName": "Timestamp",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Ticket_ID",
+              "displayName": "Ticket_ID",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Customer_Name",
+              "displayName": "Customer_Name",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Customer_Email",
+              "displayName": "Customer_Email",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Order_ID",
+              "displayName": "Order_ID",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Enquiry_Message",
+              "displayName": "Enquiry_Message",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "AI_Category",
+              "displayName": "AI_Category",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "AI_Urgency",
+              "displayName": "AI_Urgency",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Status",
+              "displayName": "Status",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "AI_Response_Sent",
+              "displayName": "AI_Response_Sent",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "row_number",
+              "displayName": "row_number",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "number",
+              "canBeUsedToMatch": true,
+              "readOnly": true,
+              "removed": true
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        2336,
+        -32
+      ],
+      "id": "15ae2c23-5515-43c0-a34a-1d99bcca73ca",
+      "name": "Log Tracking Reply Sent",
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "6Cz7SR0KyGnm8bkw",
+          "name": "Google Sheets account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=Customer Name: {{ $('Normalize Ticket Fields').item.json.customer_name }}\nTicket ID: {{ $('Normalize Ticket Fields').item.json.ticket_id }}\nProduct Question: {{ $('Normalize Ticket Fields').item.json.enquiry_message }}",
+        "messages": {
+          "messageValues": [
+            {
+              "message": "You are a knowledgeable product specialist for an online electronics and accessories store (selling Wireless Headphones, Mechanical Keyboards, USB-C Hubs, and accessories). Write a helpful, clear, personalized email reply in raw HTML answering the customer's product question.  Formatting Rules: - Return ONLY raw HTML (no markdown code fences like ```html or ```, no subject line, and no extra text outside the HTML). - Use clean, simple HTML tags appropriate for an email body such as <p>, <br>, <strong>, <ul>, and <li>.  Rules: 1. Keep the tone friendly, concise, and helpful. 2. Answer general compatibility, setup, and usage questions clearly. 3. If the customer asks for specific proprietary specs, custom bulk pricing, or exact stock counts you do not have, politely let them know you are checking with our product team and will follow up shortly—never invent fake prices or guarantees. 4. Sign off as \"Customer Support Team\"."
+            }
+          ]
+        },
+        "batching": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.chainLlm",
+      "typeVersion": 1.9,
+      "position": [
+        1808,
+        272
+      ],
+      "id": "57d277c8-789a-49c7-8f99-1077a6001d04",
+      "name": "Draft Product Specialist Reply"
+    },
+    {
+      "parameters": {
+        "model": {
+          "__rl": true,
+          "value": "gpt-4o-mini",
+          "mode": "list",
+          "cachedResultName": "gpt-4o-mini"
+        },
+        "builtInTools": {},
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
+      "typeVersion": 1.3,
+      "position": [
+        1744,
+        480
+      ],
+      "id": "ef1581af-3b53-4521-85b1-2c26e93a9eb7",
+      "name": "Product Specialist LLM",
+      "credentials": {
+        "openAiApi": {
+          "id": null,
+          "name": "",
+          "__aiGatewayManaged": true
+        }
+      }
+    },
+    {
+      "parameters": {
+        "sendTo": "={{ $('Normalize Ticket Fields').item.json.customer_email }}",
+        "subject": "=Re: Your Product Question [Ticket #{{ $('Normalize Ticket Fields').item.json.ticket_id }}]",
+        "message": "={{ $json.text }}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.2,
+      "position": [
+        2176,
+        272
+      ],
+      "id": "c70ba29b-ab6c-43c0-85a8-32be91435753",
+      "name": "Send Product Enquiry Email",
+      "webhookId": "552c2152-c766-41d9-96f1-3eac9f651400",
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "K1WwSTBobtHShplW",
+          "name": "Gmail account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "update",
+        "documentId": {
+          "__rl": true,
+          "value": "1DEg6glnrKgFkdAn6wr_y8g4YjLBrYg5OC-i2oEnj35U",
+          "mode": "list",
+          "cachedResultName": "Customer_Support_System",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1DEg6glnrKgFkdAn6wr_y8g4YjLBrYg5OC-i2oEnj35U/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "gid=0",
+          "mode": "list",
+          "cachedResultName": "Enquiries_Log",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1DEg6glnrKgFkdAn6wr_y8g4YjLBrYg5OC-i2oEnj35U/edit#gid=0"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "Ticket_ID": "={{ $('Normalize Ticket Fields').item.json.ticket_id }}",
+            "Status": "Auto-Replied (Product Enquiry)",
+            "AI_Response_Sent": "={{ $('Draft Product Specialist Reply').item.json.text }}"
+          },
+          "matchingColumns": [
+            "Ticket_ID"
+          ],
+          "schema": [
+            {
+              "id": "Timestamp",
+              "displayName": "Timestamp",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Ticket_ID",
+              "displayName": "Ticket_ID",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Customer_Name",
+              "displayName": "Customer_Name",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Customer_Email",
+              "displayName": "Customer_Email",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Order_ID",
+              "displayName": "Order_ID",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Enquiry_Message",
+              "displayName": "Enquiry_Message",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "AI_Category",
+              "displayName": "AI_Category",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "AI_Urgency",
+              "displayName": "AI_Urgency",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Status",
+              "displayName": "Status",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "AI_Response_Sent",
+              "displayName": "AI_Response_Sent",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "row_number",
+              "displayName": "row_number",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "number",
+              "canBeUsedToMatch": true,
+              "readOnly": true,
+              "removed": true
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        2400,
+        272
+      ],
+      "id": "3ccbff4d-79e7-4805-91e7-099d6dbbf59e",
+      "name": "Log Product Reply Sent",
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "6Cz7SR0KyGnm8bkw",
+          "name": "Google Sheets account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=Customer Name: {{ $('Normalize Ticket Fields').item.json.customer_name }}\nTicket ID: {{ $('Normalize Ticket Fields').item.json.ticket_id }}\nCustomer Message: {{ $('Normalize Ticket Fields').item.json.enquiry_message }}",
+        "messages": {
+          "messageValues": [
+            {
+              "message": "You are a courteous customer support representative for our online store. Write a warm, concise, personalized email response in raw HTML to the customer's general enquiry.  Store Reference Info: - Support Hours: Monday–Friday, 9:00 AM – 6:00 PM - Standard Shipping: 3–5 business days - Returns & Refunds: Eligible within 30 days of delivery in original condition  Formatting Rules: - Return ONLY raw HTML (no markdown code fences like ```html or ```, no subject line, and no text outside the HTML). - Use clean, simple HTML tags appropriate for an email body such as <p>, <br>, <strong>, <ul>, and <li>.  Rules: 1. Answer clearly using the store info above where relevant. 2. Do not invent policies or promises outside these facts. 3. Keep the tone warm and natural, and sign off as \"Customer Support Team\"."
+            }
+          ]
+        },
+        "batching": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.chainLlm",
+      "typeVersion": 1.9,
+      "position": [
+        1280,
+        272
+      ],
+      "id": "b195eab8-ee61-408a-9c76-fea5af531647",
+      "name": "Draft General Support Reply"
+    },
+    {
+      "parameters": {
+        "model": {
+          "__rl": true,
+          "value": "gpt-4o-mini",
+          "mode": "list",
+          "cachedResultName": "gpt-4o-mini"
+        },
+        "builtInTools": {},
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
+      "typeVersion": 1.3,
+      "position": [
+        1328,
+        416
+      ],
+      "id": "e546a8ce-e4f2-4b1d-b04b-0005f61be502",
+      "name": "General Support LLM",
+      "credentials": {
+        "openAiApi": {
+          "id": null,
+          "name": "",
+          "__aiGatewayManaged": true
+        }
+      }
+    },
+    {
+      "parameters": {
+        "sendTo": "={{ $('Normalize Ticket Fields').item.json.customer_email }}",
+        "subject": "=Re: Your Enquiry [Ticket #{{ $('Normalize Ticket Fields').item.json.ticket_id }}]",
+        "message": "={{ $json.text }}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.2,
+      "position": [
+        1296,
+        640
+      ],
+      "id": "22585de5-3d3e-4fb9-bdb4-633080d35f0b",
+      "name": "Send General Enquiry Email",
+      "webhookId": "e060844a-d106-492a-bfcf-80d77498f51e",
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "K1WwSTBobtHShplW",
+          "name": "Gmail account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "update",
+        "documentId": {
+          "__rl": true,
+          "value": "1DEg6glnrKgFkdAn6wr_y8g4YjLBrYg5OC-i2oEnj35U",
+          "mode": "list",
+          "cachedResultName": "Customer_Support_System",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1DEg6glnrKgFkdAn6wr_y8g4YjLBrYg5OC-i2oEnj35U/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "gid=0",
+          "mode": "list",
+          "cachedResultName": "Enquiries_Log",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1DEg6glnrKgFkdAn6wr_y8g4YjLBrYg5OC-i2oEnj35U/edit#gid=0"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "Ticket_ID": "={{ $('Normalize Ticket Fields').item.json.ticket_id }}",
+            "Status": "Auto-Replied (General Enquiry)",
+            "AI_Response_Sent": "={{ $('Draft General Support Reply').item.json.text }}"
+          },
+          "matchingColumns": [
+            "Ticket_ID"
+          ],
+          "schema": [
+            {
+              "id": "Timestamp",
+              "displayName": "Timestamp",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Ticket_ID",
+              "displayName": "Ticket_ID",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Customer_Name",
+              "displayName": "Customer_Name",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Customer_Email",
+              "displayName": "Customer_Email",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Order_ID",
+              "displayName": "Order_ID",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Enquiry_Message",
+              "displayName": "Enquiry_Message",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "AI_Category",
+              "displayName": "AI_Category",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "AI_Urgency",
+              "displayName": "AI_Urgency",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Status",
+              "displayName": "Status",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "AI_Response_Sent",
+              "displayName": "AI_Response_Sent",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "row_number",
+              "displayName": "row_number",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "number",
+              "canBeUsedToMatch": true,
+              "readOnly": true,
+              "removed": true
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        1520,
+        640
+      ],
+      "id": "e76dd733-95b4-421a-a07c-d6ad135c2f4a",
+      "name": "Log General Reply Sent",
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "6Cz7SR0KyGnm8bkw",
+          "name": "Google Sheets account"
+        }
+      }
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Tally Support Form Trigger": {
+      "main": [
+        [
+          {
+            "node": "Normalize Ticket Fields",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Normalize Ticket Fields": {
+      "main": [
+        [
+          {
+            "node": "Triage & Urgency Classifier",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Triage & Urgency Classifier": {
+      "main": [
+        [
+          {
+            "node": "Log Ticket to Enquiries_Log",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Classifier LLM (OpenAI)": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "Triage & Urgency Classifier",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Triage JSON Schema Parser": {
+      "ai_outputParser": [
+        [
+          {
+            "node": "Triage & Urgency Classifier",
+            "type": "ai_outputParser",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Log Ticket to Enquiries_Log": {
+      "main": [
+        [
+          {
+            "node": "Route by Urgency & Category",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Route by Urgency & Category": {
+      "main": [
+        [
+          {
+            "node": "Send Customer Holding Email",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Lookup Order in Orders_DB",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Draft Product Specialist Reply",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Draft General Support Reply",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Draft General Support Reply",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Send Customer Holding Email": {
+      "main": [
+        [
+          {
+            "node": "Alert Human Support Queue",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Alert Human Support Queue": {
+      "main": [
+        [
+          {
+            "node": "Mark Ticket Escalated in Log",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Lookup Order in Orders_DB": {
+      "main": [
+        [
+          {
+            "node": "Draft Grounded Tracking Reply",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Draft Grounded Tracking Reply": {
+      "main": [
+        [
+          {
+            "node": "Send Order Tracking Email",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Tracking Writer LLM": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "Draft Grounded Tracking Reply",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Send Order Tracking Email": {
+      "main": [
+        [
+          {
+            "node": "Log Tracking Reply Sent",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Draft Product Specialist Reply": {
+      "main": [
+        [
+          {
+            "node": "Send Product Enquiry Email",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Product Specialist LLM": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "Draft Product Specialist Reply",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Send Product Enquiry Email": {
+      "main": [
+        [
+          {
+            "node": "Log Product Reply Sent",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Draft General Support Reply": {
+      "main": [
+        [
+          {
+            "node": "Send General Enquiry Email",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "General Support LLM": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "Draft General Support Reply",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Send General Enquiry Email": {
+      "main": [
+        [
+          {
+            "node": "Log General Reply Sent",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": true,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate"
+  },
+  "versionId": "fffa316d-4156-417d-9413-b230fe1b31f4",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "9da52e9b71dcc492fb30510960dee814f1615c4eb4b4db52b88d3ac5ff6098f6"
+  },
+  "nodeGroups": [],
+  "id": "ExVlfa8L5YwF9Rig",
+  "tags": []
+}
