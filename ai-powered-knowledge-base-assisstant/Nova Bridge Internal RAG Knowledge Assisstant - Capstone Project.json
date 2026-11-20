@@ -13,10 +13,10 @@
         "triggerOn": "specificFolder",
         "folderToWatch": {
           "__rl": true,
-          "value": "1kmepK1T49P3i5zbQ1Nfbn7rg4oOXdqXn",
+          "value": "YOUR_GOOGLE_DRIVE_FOLDER_ID",
           "mode": "list",
           "cachedResultName": "Nova Bridge kb",
-          "cachedResultUrl": "https://drive.google.com/drive/folders/1kmepK1T49P3i5zbQ1Nfbn7rg4oOXdqXn"
+          "cachedResultUrl": "https://drive.google.com/drive/folders/YOUR_GOOGLE_DRIVE_FOLDER_ID"
         },
         "event": "fileCreated",
         "options": {}
