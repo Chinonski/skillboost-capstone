@@ -1,0 +1,422 @@
+{
+  "name": "Nova Bridge Internal RAG Knowledge Assisstant - Capstone Project",
+  "nodes": [
+    {
+      "parameters": {
+        "pollTimes": {
+          "item": [
+            {
+              "mode": "everyMinute"
+            }
+          ]
+        },
+        "triggerOn": "specificFolder",
+        "folderToWatch": {
+          "__rl": true,
+          "value": "1kmepK1T49P3i5zbQ1Nfbn7rg4oOXdqXn",
+          "mode": "list",
+          "cachedResultName": "Nova Bridge kb",
+          "cachedResultUrl": "https://drive.google.com/drive/folders/1kmepK1T49P3i5zbQ1Nfbn7rg4oOXdqXn"
+        },
+        "event": "fileCreated",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleDriveTrigger",
+      "typeVersion": 1,
+      "position": [
+        0,
+        0
+      ],
+      "id": "5d4b67f1-8683-4d64-82da-942fb8686537",
+      "name": "Google Drive Trigger",
+      "credentials": {
+        "googleDriveOAuth2Api": {
+          "id": "F3FqhHb6cYRQ7MRP",
+          "name": "Google Drive account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "download",
+        "fileId": {
+          "__rl": true,
+          "value": "={{ $json.id }}",
+          "mode": "id"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleDrive",
+      "typeVersion": 3,
+      "position": [
+        224,
+        0
+      ],
+      "id": "71c1622c-2e6d-489a-8b51-d13d367b5ead",
+      "name": "Download file",
+      "credentials": {
+        "googleDriveOAuth2Api": {
+          "id": "F3FqhHb6cYRQ7MRP",
+          "name": "Google Drive account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "text",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.extractFromFile",
+      "typeVersion": 1.2,
+      "position": [
+        448,
+        0
+      ],
+      "id": "2c105143-44d9-46f4-abb5-bacbd6dc0d99",
+      "name": "Extract from File"
+    },
+    {
+      "parameters": {
+        "mode": "insert",
+        "tableName": {
+          "__rl": true,
+          "value": "documents",
+          "mode": "list",
+          "cachedResultName": "documents"
+        },
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.vectorStoreSupabase",
+      "typeVersion": 1.4,
+      "position": [
+        672,
+        0
+      ],
+      "id": "a3350612-cc4a-495b-9039-73d932dd421b",
+      "name": "Supabase Vector Store",
+      "credentials": {
+        "supabaseApi": {
+          "id": "Pl0osC6HnsoxzI5j",
+          "name": "Supabase account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.embeddingsOpenAi",
+      "typeVersion": 1.2,
+      "position": [
+        720,
+        208
+      ],
+      "id": "9b07e233-56d2-4920-ac84-2fde866b178d",
+      "name": "Embeddings OpenAI",
+      "credentials": {
+        "openAiApi": {
+          "id": null,
+          "name": "",
+          "__aiGatewayManaged": true
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsonMode": "expressionData",
+        "jsonData": "={{ $json.data }}",
+        "textSplittingMode": "custom",
+        "options": {
+          "metadata": {
+            "metadataValues": [
+              {
+                "name": "source",
+                "value": "={{ $('Google Drive Trigger').item.json.name }}"
+              }
+            ]
+          }
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.documentDefaultDataLoader",
+      "typeVersion": 1.1,
+      "position": [
+        848,
+        256
+      ],
+      "id": "13eb47d5-1b23-40c4-8de0-1540207df9c3",
+      "name": "Default Data Loader"
+    },
+    {
+      "parameters": {
+        "chunkSize": 800,
+        "chunkOverlap": 150,
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.textSplitterRecursiveCharacterTextSplitter",
+      "typeVersion": 1,
+      "position": [
+        944,
+        464
+      ],
+      "id": "f70e790d-7d17-485c-b605-770d99a10a4a",
+      "name": "Recursive Character Text Splitter"
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.chatTrigger",
+      "typeVersion": 1.5,
+      "position": [
+        224,
+        -768
+      ],
+      "id": "ef396272-9640-4bf1-b3f4-d4ee8f4d34d9",
+      "name": "When chat message received",
+      "webhookId": "d8b92924-ab58-465b-b19d-2b676acd97da"
+    },
+    {
+      "parameters": {
+        "options": {
+          "systemMessage": "You are the internal Knowledge Base Assistant for Novabridge Digital\nSolutions. You help employees find accurate information about the\ncompany's services, pricing, policies and operations.\n\nRULES:\n1. ALWAYS use the knowledge base tool to search before answering any\n   question about the company.\n2. Answer ONLY using information returned by the knowledge base. Never\n   use outside knowledge or make assumptions.\n3. If the knowledge base does not contain the answer, reply exactly:\n   \"I couldn't find that information in the company documents. Please\n   contact HR or your manager for help.\" Do not guess.\n4. If the information is only partially available, give what is\n   documented and clearly state what is missing.\n5. Be concise and professional. Quote figures, dates and amounts exactly\n   as written.\n6. When possible, mention which document the answer came from."
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 3.1,
+      "position": [
+        448,
+        -768
+      ],
+      "id": "a414c22c-bb47-4786-baef-2cbb8f349797",
+      "name": "AI Agent"
+    },
+    {
+      "parameters": {
+        "model": {
+          "__rl": true,
+          "value": "gpt-4o-mini",
+          "mode": "list",
+          "cachedResultName": "gpt-4o-mini"
+        },
+        "builtInTools": {},
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
+      "typeVersion": 1.3,
+      "position": [
+        320,
+        -560
+      ],
+      "id": "2a6e353a-b4c2-4b69-8237-c14bbaa23b7d",
+      "name": "OpenAI Chat Model",
+      "credentials": {
+        "openAiApi": {
+          "id": null,
+          "name": "",
+          "__aiGatewayManaged": true
+        }
+      }
+    },
+    {
+      "parameters": {},
+      "type": "@n8n/n8n-nodes-langchain.memoryPostgresChat",
+      "typeVersion": 1.4,
+      "position": [
+        464,
+        -560
+      ],
+      "id": "9947247e-38b8-47a6-90a6-515b64ef30d0",
+      "name": "Postgres Chat Memory",
+      "credentials": {
+        "postgres": {
+          "id": "sZcBfBaGr0DUjNzs",
+          "name": "Postgres account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "mode": "retrieve-as-tool",
+        "toolDescription": "Search this to find information about Novabridge's services, pricing, HR policies, leave, expenses, support, refunds and offices. Always use this before answering.",
+        "tableName": {
+          "__rl": true,
+          "value": "documents",
+          "mode": "list",
+          "cachedResultName": "documents"
+        },
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.vectorStoreSupabase",
+      "typeVersion": 1.4,
+      "position": [
+        816,
+        -752
+      ],
+      "id": "a395c685-2bc2-4542-a096-c46915adfcb3",
+      "name": "Supabase Vector Store1",
+      "credentials": {
+        "supabaseApi": {
+          "id": "Pl0osC6HnsoxzI5j",
+          "name": "Supabase account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "content": "INGESTION PIPELINE"
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [
+        752,
+        -80
+      ],
+      "typeVersion": 1,
+      "id": "4f07483e-992a-43cf-ac99-51a9b87b9865",
+      "name": "Sticky Note"
+    },
+    {
+      "parameters": {
+        "content": "CHAT ASSISSTANT"
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [
+        1040,
+        -816
+      ],
+      "typeVersion": 1,
+      "id": "108a3bd1-a088-431e-a110-43ec2458f244",
+      "name": "Sticky Note1"
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Google Drive Trigger": {
+      "main": [
+        [
+          {
+            "node": "Download file",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Download file": {
+      "main": [
+        [
+          {
+            "node": "Extract from File",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Extract from File": {
+      "main": [
+        [
+          {
+            "node": "Supabase Vector Store",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Embeddings OpenAI": {
+      "ai_embedding": [
+        [
+          {
+            "node": "Supabase Vector Store",
+            "type": "ai_embedding",
+            "index": 0
+          },
+          {
+            "node": "Supabase Vector Store1",
+            "type": "ai_embedding",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Default Data Loader": {
+      "ai_document": [
+        [
+          {
+            "node": "Supabase Vector Store",
+            "type": "ai_document",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Recursive Character Text Splitter": {
+      "ai_textSplitter": [
+        [
+          {
+            "node": "Default Data Loader",
+            "type": "ai_textSplitter",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "When chat message received": {
+      "main": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "OpenAI Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Postgres Chat Memory": {
+      "ai_memory": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_memory",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Supabase Vector Store1": {
+      "ai_tool": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": true,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate"
+  },
+  "versionId": "7233d6d8-3898-42c2-bcfe-caff521bc1d7",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "9da52e9b71dcc492fb30510960dee814f1615c4eb4b4db52b88d3ac5ff6098f6"
+  },
+  "nodeGroups": [],
+  "id": "0hMhCpYNqQujX3vo",
+  "tags": []
+}
