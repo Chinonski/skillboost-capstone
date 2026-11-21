@@ -1,7 +1,9 @@
 # AI-Powered Knowledge Base Assistant (RAG) on n8n
 
 A Retrieval-Augmented Generation (RAG) assistant built with n8n that answers employee questions using a company's own documents. It retrieves the relevant passages from a vector database, answers only from that content, and says so when the information isn't available.
+## Demo & Media
 
+* **Workflow Screenshots & Walkthrough Videos:** [View Media Folder on Google Drive](https://drive.google.com/drive/folders/1kRAxj7iCXqlVx5JTKHKb622EAdKq1WNi?usp=sharing)
 ## Business Scenario
 
 Novabridge Digital Solutions (a fictional company) keeps information about its services, pricing, HR policies and operations in separate documents. Employees waste time searching through them to answer simple questions. This assistant retrieves the right information and answers in seconds, without inventing facts.
@@ -77,10 +79,4 @@ Three fictional company documents are stored in the Google Drive folder:
 * Google Drive as the source so the knowledge base can be updated by managing files in a shared folder.
 * Postgres Chat Memory instead of in-process memory so conversation history persists.
 
-## Screenshots
 
-Find links here:
-
-* `screenshots/workflow.png`: n8n canvas
-* `screenshots/supabase-table.png`: documents table with embeddings
-* `screenshots/chat-tests.png`: chat test results
