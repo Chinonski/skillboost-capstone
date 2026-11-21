@@ -1,10 +1,15 @@
-AI-Powered Lead Qualification & Sales Automation
+#AI-Powered Lead Qualification & Sales Automation
 
 An automated n8n sales pipeline that captures inbound client enquiries via Tally, evaluates budget, timeline, and fit using an AI Agent with structured JSON output, logs every submission and lead score to Google Sheets, builds custom HTML emails, and routes prospects via conditional logic to send tailored responses and internal team alerts.
 
 Tech Stack: Tally · n8n · OpenAI · Google Sheets · Gmail
+## Live Demo & Resources
 
-Workflow Architecture
+* **Client Enquiry Form:** [Submit a Test Lead on Tally](https://tally.so/r/5X9BrZ)
+* **CRM Lead Tracker:** [View Live Google Sheet Log (Read-Only)](https://docs.google.com/spreadsheets/d/1LQvt7YCagZXAhPbEP45BlF54EPvK9GcPxJfMEO9oJqw/edit?usp=sharing)
+* * **Workflow Media & Screenshots:** [View Demo Videos & Screenshots on Google Drive](https://drive.google.com/drive/folders/1lSAujaogQfiZXFL5Tu_gnf9R4_vjLzK4?usp=sharing)
+
+##Workflow Architecture
 
 [Tally Trigger] ──▶ [Code in JavaScript] ──▶ [AI Agent] ──▶ [Append row in sheet] ──▶ [Build HTML Email] ──▶ [If]
                                               ├── OpenAI Chat Model                                         ├── (True)  ──▶ [Send a message] ──▶ [Send a message2] ──▶ [Update row in sheet]
