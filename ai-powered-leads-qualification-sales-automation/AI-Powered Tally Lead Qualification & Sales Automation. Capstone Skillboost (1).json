@@ -3,7 +3,7 @@
   "nodes": [
     {
       "parameters": {
-        "formId": "5X9BrZ"
+        "formId": "YOUR_TALLY_FORM_ID"
       },
       "id": "03091c1b-a5c2-4a17-aff3-cfbca0f293ef",
       "name": "Tally Trigger",
@@ -97,17 +97,17 @@
         "operation": "append",
         "documentId": {
           "__rl": true,
-          "value": "1LQvt7YCagZXAhPbEP45BlF54EPvK9GcPxJfMEO9oJqw",
+          "value": "YOUR_GOOGLE_SHEET_ID",
           "mode": "list",
           "cachedResultName": "Agency Inbound Leads",
-          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1LQvt7YCagZXAhPbEP45BlF54EPvK9GcPxJfMEO9oJqw/edit?usp=drivesdk"
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/YOUR_GOOGLE_SHEET_ID/edit?usp=drivesdk"
         },
         "sheetName": {
           "__rl": true,
           "value": "gid=0",
           "mode": "list",
           "cachedResultName": "Leads",
-          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1LQvt7YCagZXAhPbEP45BlF54EPvK9GcPxJfMEO9oJqw/edit#gid=0"
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/YOUR_GOOGLE_SHEET_ID/edit#gid=0"
         },
         "columns": {
           "mappingMode": "defineBelow",
@@ -339,7 +339,7 @@
     },
     {
       "parameters": {
-        "sendTo": "primahonestrealty@gmail.com",
+        "sendTo": "YOUR_SALES_EMAIL",
         "subject": "=🔥 New Qualified Lead: {{ $('Tally Trigger').item.json.question_ZPL29y.value }} {{ $('Tally Trigger').item.json.question_qj7R57.value }}",
         "message": "=<div style=\"font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; border: 1px solid #e2e8f0; border-radius: 8px;\">\n  <h2 style=\"color: #2b6cb0; margin-top: 0;\">🚀 New Qualified Lead Alert!</h2>\n  <p style=\"color: #4a5568; font-size: 14px;\">A new prospect has met your qualification criteria and has automatically been sent a booking email.</p>\n  \n  <hr style=\"border: none; border-top: 1px solid #e2e8f0; margin: 20px 0;\">\n  \n  <table style=\"width: 100%; font-size: 14px; color: #2d3748; border-collapse: collapse;\">\n    <tr>\n      <td style=\"padding: 8px 0; font-weight: bold; width: 35%;\">Prospect Name:</td>\n      <td style=\"padding: 8px 0;\">{{ $('Tally Trigger').item.json.question_ZPL29y.value }}</td>\n    </tr>\n    <tr style=\"background-color: #f7fafc;\">\n      <td style=\"padding: 8px 0; font-weight: bold;\">Company:</td>\n      <td style=\"padding: 8px 0;\">{{ $('Tally Trigger').item.json.question_qj7R57.value }}</td>\n    </tr>\n    <tr>\n      <td style=\"padding: 8px 0; font-weight: bold;\">Email:</td>\n      <td style=\"padding: 8px 0;\"><a href=\"mailto:{{ $('Tally Trigger').item.json.question_N897qQ.value }}\" style=\"color: #3182ce;\">{{ $('Tally Trigger').item.json.question_N897qQ.value }}</a></td>\n    </tr>\n    <tr style=\"background-color: #f7fafc;\">\n      <td style=\"padding: 8px 0; font-weight: bold;\">Budget / Timeline:</td>\n      <td style=\"padding: 8px 0;\">{{ $('Tally Trigger').item.json.question_92g7NY.value }} / {{ $('Tally Trigger').item.json.question_e9ja5O.value }}</td>\n    </tr>\n    <tr>\n      <td style=\"padding: 8px 0; font-weight: bold;\">Lead Score:</td>\n      <td style=\"padding: 8px 0;\"><span style=\"background-color: #c6f6d5; color: #22543d; padding: 2px 8px; border-radius: 4px; font-weight: bold;\">{{ $('AI Agent').item.json.output.lead_score }} / 100</span></td>\n    </tr>\n  </table>\n\n  <div style=\"margin-top: 20px; padding: 15px; background-color: #edf2f7; border-radius: 6px;\">\n    <p style=\"margin: 0 0 5px 0; font-weight: bold; color: #2d3748; font-size: 13px;\">AI Qualification Reasoning:</p>\n    <p style=\"margin: 0; color: #4a5568; font-size: 13px; font-style: italic;\">\"{{ $('AI Agent').item.json.output.qualification_reason }}\"</p>\n  </div>\n\n  <p style=\"margin-top: 25px; font-size: 12px; color: #a0aec0; text-align: center;\">Automated alert generated via your n8n workflow.</p>\n</div>",
         "options": {
@@ -367,17 +367,17 @@
         "operation": "update",
         "documentId": {
           "__rl": true,
-          "value": "1LQvt7YCagZXAhPbEP45BlF54EPvK9GcPxJfMEO9oJqw",
+          "value": "YOUR_GOOGLE_SHEET_ID",
           "mode": "list",
           "cachedResultName": "Agency Inbound Leads",
-          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1LQvt7YCagZXAhPbEP45BlF54EPvK9GcPxJfMEO9oJqw/edit?usp=drivesdk"
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/YOUR_GOOGLE_SHEET_ID/edit?usp=drivesdk"
         },
         "sheetName": {
           "__rl": true,
           "value": "gid=0",
           "mode": "list",
           "cachedResultName": "Leads",
-          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1LQvt7YCagZXAhPbEP45BlF54EPvK9GcPxJfMEO9oJqw/edit#gid=0"
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/YOUR_GOOGLE_SHEET_ID/edit#gid=0"
         },
         "columns": {
           "mappingMode": "defineBelow",
