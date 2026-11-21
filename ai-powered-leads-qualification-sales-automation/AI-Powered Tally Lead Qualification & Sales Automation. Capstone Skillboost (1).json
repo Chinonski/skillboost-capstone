@@ -1,0 +1,693 @@
+{
+  "name": "AI-Powered Tally Lead Qualification & Sales Automation. Capstone Skillboost",
+  "nodes": [
+    {
+      "parameters": {
+        "formId": "5X9BrZ"
+      },
+      "id": "03091c1b-a5c2-4a17-aff3-cfbca0f293ef",
+      "name": "Tally Trigger",
+      "type": "n8n-nodes-tallyforms.tallyTrigger",
+      "typeVersion": 2,
+      "position": [
+        0,
+        0
+      ],
+      "webhookId": "3b8395ea-efa2-46c7-bd9b-9bc42c87ef12",
+      "credentials": {
+        "tallyApi": {
+          "id": "JB2TyyMxZN86z7QW",
+          "name": "Tally account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "const results = [];\n\nfor (const item of $input.all()) {\n  const data = item.json;\n  \n  const cleanData = {\n    submissionId: data.id,\n    formName: data.formName,\n    submittedAt: data.createdAt\n  };\n\n  for (const [key, field] of Object.entries(data)) {\n    if (field && typeof field === 'object' && 'label' in field && 'value' in field) {\n      let answer = field.value;\n\n      // If the question has selectable options (dropdowns/checkboxes), map IDs to their readable text\n      if (Array.isArray(field.options) && Array.isArray(answer)) {\n        answer = answer.map(id => {\n          const matchedOption = field.options.find(opt => opt.id === id);\n          return matchedOption ? matchedOption.text : id;\n        }).join(', ');\n      }\n\n      cleanData[field.label] = answer;\n    }\n  }\n\n  results.push({ json: cleanData });\n}\n\nreturn results;"
+      },
+      "id": "54813743-be32-4420-8672-d44ead3f38c3",
+      "name": "Code in JavaScript",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        224,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=Evaluate the following inbound digital marketing agency lead:\n- Full Name: {{ $json['Full Name'] }}\n- Work Email: {{ $json['Work Email'] }}\n- Company Name & Website: {{ $json['Company Name &amp; Website'] }}\n- Services Needed: {{ $json['Services Needed'] }}\n- Monthly Marketing Budget: {{ $json['Monthly Marketing Budget'] }}\n- Target Timeline: {{ $json['Target Timeline'] }}\n- Project Goals & Bottlenecks: {{ $json['Project Goals &amp; Current Bottle Necks'] }}",
+        "hasOutputParser": true,
+        "options": {
+          "systemMessage": "You are a Senior Sales Operations Analyst for a B2B digital marketing agency. Your job is to evaluate inbound client enquiries and classify them as Qualified or Unqualified based strictly on the criteria below.\n\nQUALIFICATION CRITERIA:\n1. Budget: Minimum viable budget is $1,500/month. Anything below $1,500 is automatically Unqualified unless enterprise upside is clearly stated.\n2. Timeline: Must be looking to start within 90 days. \"Just exploring\" with no concrete pain point is Unqualified.\n3. Clarity & Fit: The prospect must describe a real business problem that aligns with digital marketing services. Spam, job seekers, or vague one-word answers are Unqualified.\n\nINSTRUCTIONS:\n- Analyze the incoming lead data accurately.\n- Set \"is_qualified\" to true or false.\n- Assign a \"lead_score\" from 0 to 100.\n- Provide a brief \"qualification_reason\".\n- Write a professional \"personalized_email_subject\".\n- Write a warm, concise \"personalized_email_body\" addressing the lead by name, referencing their goals, and signing off as \"The Growth Team\".\n\nAlways respond with a valid JSON object matching the required schema. Never return an empty response."
+        }
+      },
+      "id": "7479122c-36bf-4026-8857-8bfec064c8a2",
+      "name": "AI Agent",
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 3.1,
+      "position": [
+        448,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "model": {
+          "__rl": true,
+          "value": "gpt-4o",
+          "mode": "list",
+          "cachedResultName": "gpt-4o"
+        },
+        "builtInTools": {},
+        "options": {}
+      },
+      "id": "99940790-14eb-4126-bd33-9517b22fdb37",
+      "name": "OpenAI Chat Model",
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
+      "typeVersion": 1.3,
+      "position": [
+        304,
+        208
+      ],
+      "credentials": {
+        "openAiApi": {
+          "id": null,
+          "name": "",
+          "__aiGatewayManaged": true
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsonSchemaExample": "{\n  \"is_qualified\": true,\n  \"lead_score\": 85,\n  \"qualification_reason\": \"The prospect has a solid budget and urgent timeline.\",\n  \"personalized_email_subject\": \"Next Steps for Your Project\",\n  \"personalized_email_body\": \"Hi Ade,\\n\\nThank you for reaching out to us about your ads. We'd love to help you scale your restaurant.\\n\\nBest regards,\\nThe Growth Team\",\n  \"lead_qualification_kpis\": \"Budget and timeline match criteria.\"\n}"
+      },
+      "id": "ee0dace1-a321-4f5b-8709-1292e02ab0ab",
+      "name": "Structured Output Parser",
+      "type": "@n8n/n8n-nodes-langchain.outputParserStructured",
+      "typeVersion": 1.3,
+      "position": [
+        576,
+        272
+      ]
+    },
+    {
+      "parameters": {
+        "operation": "append",
+        "documentId": {
+          "__rl": true,
+          "value": "1LQvt7YCagZXAhPbEP45BlF54EPvK9GcPxJfMEO9oJqw",
+          "mode": "list",
+          "cachedResultName": "Agency Inbound Leads",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1LQvt7YCagZXAhPbEP45BlF54EPvK9GcPxJfMEO9oJqw/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "gid=0",
+          "mode": "list",
+          "cachedResultName": "Leads",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1LQvt7YCagZXAhPbEP45BlF54EPvK9GcPxJfMEO9oJqw/edit#gid=0"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "Timestamp": "={{ $now }}",
+            "Qualified": "={{ $json.output.is_qualified }}",
+            "AI Reasoning": "={{ $json.output.qualification_reason }}",
+            "Lead Score": "={{ $json.output.lead_score }}",
+            "Lead Qualification KPIs": "={{ $json.output.lead_qualification_kpis }}",
+            "Name": "={{ $('Tally Trigger').item.json.question_ZPL29y.value }}",
+            "Email": "={{ $('Tally Trigger').item.json.question_N897qQ.value }}",
+            "Company": "={{ $('Tally Trigger').item.json.question_qj7R57.value }}",
+            "Budget": "={{ $('Tally Trigger').item.json.question_92g7NY.value }}",
+            "Timeline": "={{ $('Tally Trigger').item.json.question_e9ja5O.value }}",
+            "Goals": "={{ $('Tally Trigger').item.json.question_Wlk8Ja.value }}"
+          },
+          "matchingColumns": [],
+          "schema": [
+            {
+              "id": "Timestamp",
+              "displayName": "Timestamp",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Name",
+              "displayName": "Name",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Email",
+              "displayName": "Email",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Company",
+              "displayName": "Company",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Budget",
+              "displayName": "Budget",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Timeline",
+              "displayName": "Timeline",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Goals",
+              "displayName": "Goals",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Qualified",
+              "displayName": "Qualified",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Lead Score",
+              "displayName": "Lead Score",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "AI Reasoning",
+              "displayName": "AI Reasoning",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Email Sent",
+              "displayName": "Email Sent",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Lead Qualification KPIs",
+              "displayName": "Lead Qualification KPIs",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "id": "3aed9d9f-b081-4fd9-8b56-52adf3618aec",
+      "name": "Append row in sheet",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        816,
+        0
+      ],
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "6Cz7SR0KyGnm8bkw",
+          "name": "Google Sheets account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "a1b2c3d4-0001-4000-8000-000000000001",
+              "name": "html_body",
+              "type": "string",
+              "value": "=<div style=\"font-family: Arial, Helvetica, sans-serif; font-size: 15px; line-height: 1.6; color: #222222; max-width: 600px;\">{{ String($('AI Agent').item.json.output.personalized_email_body).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/\\r?\\n/g, '<br>') }}</div>"
+            }
+          ]
+        },
+        "includeOtherFields": true,
+        "options": {}
+      },
+      "id": "b009321b-4fd9-426f-bb7d-c2d65cb997d8",
+      "name": "Build HTML Email",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        1040,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 4
+          },
+          "conditions": [
+            {
+              "id": "5880fff7-306e-4669-8ab1-9fa62cf0beeb",
+              "leftValue": "={{ $('AI Agent').item.json.output.is_qualified }}",
+              "rightValue": true,
+              "operator": {
+                "type": "boolean",
+                "operation": "equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "356cb264-1f0e-4bf2-92f6-b9b34d21b12a",
+      "name": "If",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.4,
+      "position": [
+        1264,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "sendTo": "={{ $('Tally Trigger').item.json.question_N897qQ.value }}",
+        "subject": "={{ $('AI Agent').item.json.output.personalized_email_subject }}",
+        "message": "={{ $('Build HTML Email').item.json.html_body }}",
+        "options": {
+          "appendAttribution": false
+        }
+      },
+      "id": "d7ca36ad-28eb-4eb0-ab3f-84c5130c6324",
+      "name": "Send a message",
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.2,
+      "position": [
+        1488,
+        -16
+      ],
+      "webhookId": "7a4e6fca-2f18-49d4-9278-42a67cca36fe",
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "K1WwSTBobtHShplW",
+          "name": "Gmail account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "sendTo": "primahonestrealty@gmail.com",
+        "subject": "=🔥 New Qualified Lead: {{ $('Tally Trigger').item.json.question_ZPL29y.value }} {{ $('Tally Trigger').item.json.question_qj7R57.value }}",
+        "message": "=<div style=\"font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; border: 1px solid #e2e8f0; border-radius: 8px;\">\n  <h2 style=\"color: #2b6cb0; margin-top: 0;\">🚀 New Qualified Lead Alert!</h2>\n  <p style=\"color: #4a5568; font-size: 14px;\">A new prospect has met your qualification criteria and has automatically been sent a booking email.</p>\n  \n  <hr style=\"border: none; border-top: 1px solid #e2e8f0; margin: 20px 0;\">\n  \n  <table style=\"width: 100%; font-size: 14px; color: #2d3748; border-collapse: collapse;\">\n    <tr>\n      <td style=\"padding: 8px 0; font-weight: bold; width: 35%;\">Prospect Name:</td>\n      <td style=\"padding: 8px 0;\">{{ $('Tally Trigger').item.json.question_ZPL29y.value }}</td>\n    </tr>\n    <tr style=\"background-color: #f7fafc;\">\n      <td style=\"padding: 8px 0; font-weight: bold;\">Company:</td>\n      <td style=\"padding: 8px 0;\">{{ $('Tally Trigger').item.json.question_qj7R57.value }}</td>\n    </tr>\n    <tr>\n      <td style=\"padding: 8px 0; font-weight: bold;\">Email:</td>\n      <td style=\"padding: 8px 0;\"><a href=\"mailto:{{ $('Tally Trigger').item.json.question_N897qQ.value }}\" style=\"color: #3182ce;\">{{ $('Tally Trigger').item.json.question_N897qQ.value }}</a></td>\n    </tr>\n    <tr style=\"background-color: #f7fafc;\">\n      <td style=\"padding: 8px 0; font-weight: bold;\">Budget / Timeline:</td>\n      <td style=\"padding: 8px 0;\">{{ $('Tally Trigger').item.json.question_92g7NY.value }} / {{ $('Tally Trigger').item.json.question_e9ja5O.value }}</td>\n    </tr>\n    <tr>\n      <td style=\"padding: 8px 0; font-weight: bold;\">Lead Score:</td>\n      <td style=\"padding: 8px 0;\"><span style=\"background-color: #c6f6d5; color: #22543d; padding: 2px 8px; border-radius: 4px; font-weight: bold;\">{{ $('AI Agent').item.json.output.lead_score }} / 100</span></td>\n    </tr>\n  </table>\n\n  <div style=\"margin-top: 20px; padding: 15px; background-color: #edf2f7; border-radius: 6px;\">\n    <p style=\"margin: 0 0 5px 0; font-weight: bold; color: #2d3748; font-size: 13px;\">AI Qualification Reasoning:</p>\n    <p style=\"margin: 0; color: #4a5568; font-size: 13px; font-style: italic;\">\"{{ $('AI Agent').item.json.output.qualification_reason }}\"</p>\n  </div>\n\n  <p style=\"margin-top: 25px; font-size: 12px; color: #a0aec0; text-align: center;\">Automated alert generated via your n8n workflow.</p>\n</div>",
+        "options": {
+          "appendAttribution": false
+        }
+      },
+      "id": "8c38ff67-220e-49fb-a368-527464b9dd31",
+      "name": "Send a message2",
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.2,
+      "position": [
+        1712,
+        -16
+      ],
+      "webhookId": "f021a1d8-0444-4bd4-b1e3-abca27210e0a",
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "K1WwSTBobtHShplW",
+          "name": "Gmail account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "update",
+        "documentId": {
+          "__rl": true,
+          "value": "1LQvt7YCagZXAhPbEP45BlF54EPvK9GcPxJfMEO9oJqw",
+          "mode": "list",
+          "cachedResultName": "Agency Inbound Leads",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1LQvt7YCagZXAhPbEP45BlF54EPvK9GcPxJfMEO9oJqw/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "gid=0",
+          "mode": "list",
+          "cachedResultName": "Leads",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1LQvt7YCagZXAhPbEP45BlF54EPvK9GcPxJfMEO9oJqw/edit#gid=0"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "Email Sent": "Yes",
+            "Email": "={{ $('Tally Trigger').item.json.question_N897qQ.value }}"
+          },
+          "matchingColumns": [
+            "Email"
+          ],
+          "schema": [
+            {
+              "id": "Timestamp",
+              "displayName": "Timestamp",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Name",
+              "displayName": "Name",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Email",
+              "displayName": "Email",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Company",
+              "displayName": "Company",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Budget",
+              "displayName": "Budget",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Timeline",
+              "displayName": "Timeline",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Goals",
+              "displayName": "Goals",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Qualified",
+              "displayName": "Qualified",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Lead Score",
+              "displayName": "Lead Score",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "AI Reasoning",
+              "displayName": "AI Reasoning",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Email Sent",
+              "displayName": "Email Sent",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Lead Qualification KPIs",
+              "displayName": "Lead Qualification KPIs",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "row_number",
+              "displayName": "row_number",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "number",
+              "canBeUsedToMatch": true,
+              "readOnly": true,
+              "removed": true
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "id": "f2243136-572b-49a6-b0c9-86f4650b8972",
+      "name": "Update row in sheet",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        1952,
+        -16
+      ],
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "6Cz7SR0KyGnm8bkw",
+          "name": "Google Sheets account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "sendTo": "={{ $('Tally Trigger').item.json.question_N897qQ.value }}",
+        "subject": "={{ $('AI Agent').item.json.output.personalized_email_subject }}",
+        "message": "={{ $('Build HTML Email').item.json.html_body }}",
+        "options": {
+          "appendAttribution": false
+        }
+      },
+      "id": "5c7e5fcd-0983-4b6d-ac15-21b6aecd0340",
+      "name": "Send a message1",
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.2,
+      "position": [
+        1680,
+        240
+      ],
+      "webhookId": "0e3c307f-fe5d-4f2a-8c90-89f3e1c8ac14",
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "K1WwSTBobtHShplW",
+          "name": "Gmail account"
+        }
+      }
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Tally Trigger": {
+      "main": [
+        [
+          {
+            "node": "Code in JavaScript",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code in JavaScript": {
+      "main": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "AI Agent": {
+      "main": [
+        [
+          {
+            "node": "Append row in sheet",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "OpenAI Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Structured Output Parser": {
+      "ai_outputParser": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_outputParser",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Append row in sheet": {
+      "main": [
+        [
+          {
+            "node": "Build HTML Email",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Build HTML Email": {
+      "main": [
+        [
+          {
+            "node": "If",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "If": {
+      "main": [
+        [
+          {
+            "node": "Send a message",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Send a message1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Send a message": {
+      "main": [
+        [
+          {
+            "node": "Send a message2",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Send a message2": {
+      "main": [
+        [
+          {
+            "node": "Update row in sheet",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": true,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate"
+  },
+  "versionId": "03004237-e478-4b60-9c56-b327940cc3a5",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "9da52e9b71dcc492fb30510960dee814f1615c4eb4b4db52b88d3ac5ff6098f6"
+  },
+  "nodeGroups": [],
+  "id": "VI5lj1oy7iJhQ8NN",
+  "tags": []
+}
