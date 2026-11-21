@@ -2,6 +2,12 @@
 
 An automated, multi-branch customer support triage and order fulfillment workflow built in **n8n**, integrating **Tally Forms**, **OpenAI**, **Google Sheets**, and **Gmail**.
 
+## Live Demo & Resources
+
+* **Customer Support Form:** [Submit a Test Ticket on Tally](https://tally.so/r/X5o7xV)
+* **Ticket & Order Database:** [View Google Sheets Log (Read-Only)](
+https://docs.google.com/spreadsheets/d/1LQvt7YCagZXAhPbEP45BlF54EPvK9GcPxJfMEO9oJqw/edit?usp=sharing)
+* **Workflow Media & Screenshots:** [View Demo Videos & Screenshots on Google Drive](https://drive.google.com/drive/folders/1Aoc1HCcDIuKbbmnlo5pmtKwuEPauPamA?usp=sharing)
 ---
 
 ## Architecture & Workflow Flow
